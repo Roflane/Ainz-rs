@@ -1,0 +1,18 @@
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[package]
+name = "Ainz-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+winapi = { version = "0.3.9", features = ["processthreadsapi", "minwindef", "ntdef", "tlhelp32"] }
+windows-sys = { version = "0.61.2", features = ["Win32_System_Memory", "Win32_System_Threading"] }
+ntapi = "0.4.2"
+winapi-comm = "0.1.0"
+colored = "3.1.1"
+widestring = "1.2.1"
+windows-win = "3.0.0"
