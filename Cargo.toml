@@ -14,4 +14,3 @@ windows-sys = { version = "0.61.2", features = ["Win32_System_Memory", "Win32_Sy
 ntapi = "0.4.2"
 winapi-comm = "0.1.0"
 colored = "3.1.1"
-windows-win = "3.0.0"
