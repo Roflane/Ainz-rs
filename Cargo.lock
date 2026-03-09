@@ -8,7 +8,6 @@ version = "0.1.0"
 dependencies = [
  "colored",
  "ntapi",
- "widestring",
  "winapi",
  "winapi-comm",
  "windows-sys",
@@ -38,12 +37,6 @@ checksum = "c70f219e21142367c70c0b30c6a9e3a14d55b4d12a204d897fbec83a0363f081"
 dependencies = [
  "winapi",
 ]
-
-[[package]]
-name = "widestring"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72069c3113ab32ab29e5584db3c6ec55d416895e60715417b5b883a357c3e471"
 
 [[package]]
 name = "winapi"

@@ -13,7 +13,6 @@ use winapi_comm::LoadLibraryA;
 use windows_sys::Win32::System::Memory::*;
 use windows_sys::Win32::System::Threading::*;
 use winapi::um::tlhelp32::{CreateToolhelp32Snapshot, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32};
-use windows_win::sys::LARGE_INTEGER;
 
 #[macro_export]
 macro_rules! nt_success {
@@ -355,11 +354,11 @@ impl Ainz {
 
             let mut peb: PEB = zeroed();
             if !nt_success!(ZwReadVirtualMemory(
-                self.ainz_ctx.proc_handle,
-                p_peb as PVOID,
-                &mut peb as *mut PEB as PVOID,
-                size_of_val(&peb),
-                null_mut())) {
+            self.ainz_ctx.proc_handle,
+            p_peb as PVOID,
+            &mut peb as *mut PEB as PVOID,
+            size_of_val(&peb),
+            null_mut())) {
                 return Err(UnlinkError::FailedReadPEB);
             }
 
@@ -369,27 +368,34 @@ impl Ainz {
 
             let mut ldr: PEB_LDR_DATA = zeroed();
             if !nt_success!(ZwReadVirtualMemory(
-                self.ainz_ctx.proc_handle,
-                peb.Ldr as PVOID,
-                &mut ldr as *mut _ as PVOID,
-                size_of_val(&ldr),
-                null_mut())) {
+            self.ainz_ctx.proc_handle,
+            peb.Ldr as PVOID,
+            &mut ldr as *mut _ as PVOID,
+            size_of_val(&ldr),
+            null_mut())) {
                 return Err(UnlinkError::FailedReadLdr);
             }
 
+            let mut last_error = Ok(());
+
             for dll in &self.dlls {
-                return match self.hide_entry(
+                match self.hide_entry(
                     dll, &ldr.InMemoryOrderModuleList,
                     offset_of!(LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks) as u64) {
-                    Ok(_) => Ok(()),
-                    Err(HideError::FailedReadCurrent) => Err(UnlinkError::FailedInternalReadCurrent),
-                    Err(HideError::FailedReadDllBuffer) => Err(UnlinkError::FailedInternalReadDllBuffer),
-                    Err(HideError::FailedReadEntryAddress) => Err(UnlinkError::FailedInternalReadEntryAddress),
-                    Err(HideError::FailedInternalMutate) => Err(UnlinkError::FailedMutate)
+                    Ok(_) => continue,
+                    Err(e) => {
+                        last_error = match e {
+                            HideError::FailedReadCurrent => Err(UnlinkError::FailedInternalReadCurrent),
+                            HideError::FailedReadDllBuffer => Err(UnlinkError::FailedInternalReadDllBuffer),
+                            HideError::FailedReadEntryAddress => Err(UnlinkError::FailedInternalReadEntryAddress),
+                            HideError::FailedInternalMutate => Err(UnlinkError::FailedMutate)
+                        };
+                    }
                 }
             }
+
+            last_error
         }
-        Ok(())
     }
 
     pub unsafe fn hide_entry(&self, dll: &String, list_head: &LIST_ENTRY, list_offset: u64) -> Result<(), HideError> {
@@ -411,11 +417,11 @@ impl Ainz {
 
                 let mut entry_data: LDR_DATA_TABLE_ENTRY = zeroed();
                 if !nt_success!(ZwReadVirtualMemory(
-                self.ainz_ctx.proc_handle,
-                entry_addr as PVOID,
-                &mut entry_data as *mut LDR_DATA_TABLE_ENTRY as PVOID,
-                size_of::<LDR_DATA_TABLE_ENTRY>(),
-                null_mut()
+                    self.ainz_ctx.proc_handle,
+                    entry_addr as PVOID,
+                    &mut entry_data as *mut LDR_DATA_TABLE_ENTRY as PVOID,
+                    size_of::<LDR_DATA_TABLE_ENTRY>(),
+                    null_mut()
                 )) {
                     current = current_entry.Flink;
                     continue;
@@ -544,7 +550,7 @@ impl Ainz {
                         &null_list_ptr as *const _ as PVOID,
                         size_of::<*mut LIST_ENTRY>(),
                         null_mut())) { return Err(MutateError::FailedNullifySelfBlink); }
-                }
+               }
             }
         }
         Ok(())
